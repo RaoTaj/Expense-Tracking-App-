@@ -8,6 +8,12 @@ const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const { db, init } = require('./db');
 
+init();
+
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+
 // Utility to generate a readable RRN (reference number): YYYYMMDDHHMMSS_mmm_RANDOM
 function generateRRN() {
   const d = new Date();
@@ -17,12 +23,6 @@ function generateRRN() {
   const rand = Math.floor(Math.random() * 900000 + 100000); // 6-digit
   return `${datePart}_${millis}_${rand}`;
 }
-
-init();
-
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
 
 // Attach an RRN and optional username to each request for tracing
 app.use((req, res, next) => {
@@ -82,180 +82,192 @@ app.use(expressWinston.logger({
 app.post('/api/register', (req, res) => {
   const { username, fullName, password, cnic, country, city, zipcode } = req.body;
   if (!username || !password) return res.status(400).json({ error: 'username and password required' });
-  db.get('SELECT username FROM users WHERE username = ?', [username], (err, row) => {
-    if (err) {
-      logger.error('DB error on register', { err });
-      return res.status(500).json({ error: 'db error' });
-    }
+  
+  try {
+    const row = db.prepare('SELECT username FROM users WHERE username = ?').get(username);
     if (row) return res.status(409).json({ error: 'Username exists' });
-    db.run('INSERT INTO users (username, fullName, password, cnic, country, city, zipcode, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [username, fullName, password, cnic, country, city, zipcode, new Date().toISOString()], (e) => {
-        if (e) {
-          logger.error(`[${req.rrn}] ${username} - DB error inserting user`, { rrn: req.rrn, username, err: e });
-          return res.status(500).json({ error: 'db error' });
-        }
-        logger.info(`[${req.rrn}] ${username} - User registered`, { rrn: req.rrn, username });
-        res.json({ success: true });
-      });
-  });
+    
+    db.prepare('INSERT INTO users (username, fullName, password, cnic, country, city, zipcode, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+      .run(username, fullName, password, cnic, country, city, zipcode, new Date().toISOString());
+    
+    logger.info(`[${req.rrn}] ${username} - User registered`, { rrn: req.rrn, username });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error inserting user`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.post('/api/login', (req, res) => {
   const { username, password } = req.body;
-  db.get('SELECT * FROM users WHERE username = ?', [username], (err, row) => {
-    if (err) {
-      logger.error(`[${req.rrn}] ${username || req.requestedUsername} - DB error on login`, { rrn: req.rrn, username: username || req.requestedUsername, err });
-      return res.status(500).json({ error: 'db error' });
-    }
+  
+  try {
+    const row = db.prepare('SELECT * FROM users WHERE username = ?').get(username);
     if (!row) return res.status(404).json({ error: 'User not found' });
     if (row.password !== password) return res.status(401).json({ error: 'Incorrect password' });
+    
     logger.info(`[${req.rrn}] ${username} - User login success`, { rrn: req.rrn, username });
     res.json({ success: true, user: { fullName: row.fullName, username: row.username } });
-  });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error on login`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.get('/api/user/:username/data', (req, res) => {
   const username = req.params.username;
-  const result = {};
-  db.all('SELECT * FROM expenses WHERE username = ? ORDER BY date DESC', [username], (err, expenses) => {
-    if (err) return res.status(500).json({ error: 'db error' });
-    result.expenses = expenses || [];
-    db.all('SELECT name,color,hex,budget,icon FROM categories WHERE username = ?', [username], (err2, categories) => {
-      if (err2) return res.status(500).json({ error: 'db error' });
-      result.categories = categories && categories.length ? categories : null;
-      db.get('SELECT amount FROM budgets WHERE username = ?', [username], (err3, budgetRow) => {
-        if (err3) return res.status(500).json({ error: 'db error' });
-        result.budget = budgetRow ? budgetRow.amount : null;
-        res.json(result);
-      });
+  
+  try {
+    const expenses = db.prepare('SELECT * FROM expenses WHERE username = ? ORDER BY date DESC').all(username) || [];
+    const categories = db.prepare('SELECT name,color,hex,budget,icon FROM categories WHERE username = ?').all(username);
+    const budgetRow = db.prepare('SELECT amount FROM budgets WHERE username = ?').get(username);
+    
+    res.json({
+      expenses,
+      categories: categories && categories.length ? categories : null,
+      budget: budgetRow ? budgetRow.amount : null
     });
-  });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error fetching user data`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.post('/api/expenses', (req, res) => {
   const { username, amount, category, description, date } = req.body;
   if (!username) return res.status(400).json({ error: 'username required' });
-  db.run('INSERT INTO expenses (username, amount, category, description, date) VALUES (?, ?, ?, ?, ?)',
-    [username, amount, category, description, date], function (err) {
-      if (err) {
-        logger.error(`[${req.rrn}] ${username} - DB error insert expense`, { rrn: req.rrn, username, err });
-        return res.status(500).json({ error: 'db error' });
-      }
-      logger.info(`[${req.rrn}] ${username} - Expense added id=${this.lastID}`, { rrn: req.rrn, username, expenseId: this.lastID });
-      res.json({ success: true, id: this.lastID });
-    });
+  
+  try {
+    const result = db.prepare('INSERT INTO expenses (username, amount, category, description, date) VALUES (?, ?, ?, ?, ?)')
+      .run(username, amount, category, description, date);
+    
+    logger.info(`[${req.rrn}] ${username} - Expense added id=${result.lastInsertRowid}`, { rrn: req.rrn, username, expenseId: result.lastInsertRowid });
+    res.json({ success: true, id: result.lastInsertRowid });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error insert expense`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.post('/api/expenses/bulk', (req, res) => {
   const { username, expenses } = req.body;
   if (!username || !Array.isArray(expenses)) return res.status(400).json({ error: 'invalid payload' });
-  db.serialize(() => {
-    db.run('DELETE FROM expenses WHERE username = ?', [username], (delErr) => {
-      if (delErr) {
-        logger.error(`[${req.rrn}] ${username} - DB error deleting existing expenses before bulk insert`, { rrn: req.rrn, username, err: delErr });
-        return res.status(500).json({ error: 'db error' });
-      }
-      const stmt = db.prepare('INSERT INTO expenses (username, amount, category, description, date) VALUES (?, ?, ?, ?, ?)');
-      for (const e of expenses) {
-        stmt.run([username, e.amount, e.category, e.description, e.date]);
-      }
-      stmt.finalize((fErr) => {
-        if (fErr) {
-          logger.error(`[${req.rrn}] ${username} - DB error finalizing bulk expense insert`, { rrn: req.rrn, username, err: fErr });
-          return res.status(500).json({ error: 'db error' });
-        }
-        logger.info(`[${req.rrn}] ${username} - Bulk expenses saved (${expenses.length})`, { rrn: req.rrn, username, count: expenses.length });
-        res.json({ success: true });
-      });
-    });
-  });
+  
+  try {
+    db.prepare('DELETE FROM expenses WHERE username = ?').run(username);
+    
+    const insertStmt = db.prepare('INSERT INTO expenses (username, amount, category, description, date) VALUES (?, ?, ?, ?, ?)');
+    for (const e of expenses) {
+      insertStmt.run(username, e.amount, e.category, e.description, e.date);
+    }
+    
+    logger.info(`[${req.rrn}] ${username} - Bulk expenses saved (${expenses.length})`, { rrn: req.rrn, username, count: expenses.length });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error bulk expenses`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.get('/api/expenses/:username', (req, res) => {
   const username = req.params.username;
-  db.all('SELECT * FROM expenses WHERE username = ? ORDER BY date DESC', [username], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'db error' });
+  
+  try {
+    const rows = db.prepare('SELECT * FROM expenses WHERE username = ? ORDER BY date DESC').all(username) || [];
     logger.info(`[${req.rrn}] ${username} - Retrieved ${rows.length} expenses`, { rrn: req.rrn, username, count: rows.length });
     res.json(rows);
-  });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error fetching expenses`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.delete('/api/expenses/:id', (req, res) => {
   const id = req.params.id;
-  db.run('DELETE FROM expenses WHERE id = ?', [id], function (err) {
-    if (err) {
-      logger.error(`[${req.rrn}] - DB error delete expense id=${id}`, { rrn: req.rrn, err });
-      return res.status(500).json({ error: 'db error' });
-    }
+  
+  try {
+    db.prepare('DELETE FROM expenses WHERE id = ?').run(id);
     logger.info(`[${req.rrn}] - Expense deleted id=${id}`, { rrn: req.rrn, expenseId: id });
     res.json({ success: true });
-  });
+  } catch (err) {
+    logger.error(`[${req.rrn}] - DB error delete expense id=${id}`, { rrn: req.rrn, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.post('/api/categories', (req, res) => {
   const { username, categories } = req.body;
   if (!username || !Array.isArray(categories)) return res.status(400).json({ error: 'invalid payload' });
-  // Simple approach: delete existing categories for user then insert provided
-  db.serialize(() => {
-    db.run('DELETE FROM categories WHERE username = ?', [username], (delErr) => {
-      if (delErr) {
-        logger.error(`[${req.rrn}] ${username} - DB error delete categories`, { rrn: req.rrn, username, err: delErr });
-        return res.status(500).json({ error: 'db error' });
-      }
-      const stmt = db.prepare('INSERT INTO categories (username, name, color, hex, budget, icon) VALUES (?, ?, ?, ?, ?, ?)');
-      for (const c of categories) {
-        stmt.run([username, c.name, c.color, c.hex, c.budget, c.icon]);
-      }
-      stmt.finalize((fErr) => {
-        if (fErr) {
-          logger.error(`[${req.rrn}] ${username} - DB error finalizing categories insert`, { rrn: req.rrn, username, err: fErr });
-          return res.status(500).json({ error: 'db error' });
-        }
-        logger.info(`[${req.rrn}] ${username} - Categories saved (${categories.length})`, { rrn: req.rrn, username, count: categories.length });
-        res.json({ success: true });
-      });
-    });
-  });
+  
+  try {
+    db.prepare('DELETE FROM categories WHERE username = ?').run(username);
+    
+    const insertStmt = db.prepare('INSERT INTO categories (username, name, color, hex, budget, icon) VALUES (?, ?, ?, ?, ?, ?)');
+    for (const c of categories) {
+      insertStmt.run(username, c.name, c.color, c.hex, c.budget, c.icon);
+    }
+    
+    logger.info(`[${req.rrn}] ${username} - Categories saved (${categories.length})`, { rrn: req.rrn, username, count: categories.length });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error save categories`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.get('/api/categories/:username', (req, res) => {
   const username = req.params.username;
-  db.all('SELECT name,color,hex,budget,icon FROM categories WHERE username = ?', [username], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'db error' });
+  
+  try {
+    const rows = db.prepare('SELECT name,color,hex,budget,icon FROM categories WHERE username = ?').all(username) || [];
     res.json(rows);
-  });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error fetching categories`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.post('/api/budget', (req, res) => {
   const { username, amount } = req.body;
   if (!username) return res.status(400).json({ error: 'username required' });
-  db.run('INSERT INTO budgets (username, amount) VALUES (?, ?) ON CONFLICT(username) DO UPDATE SET amount=excluded.amount',
-    [username, amount], function (err) {
-      if (err) {
-        logger.error(`[${req.rrn}] ${username} - DB error save budget`, { rrn: req.rrn, username, err });
-        return res.status(500).json({ error: 'db error' });
-      }
-      logger.info(`[${req.rrn}] ${username} - Budget set to ${amount}`, { rrn: req.rrn, username, amount });
-      res.json({ success: true });
-    });
+  
+  try {
+    db.prepare('INSERT INTO budgets (username, amount) VALUES (?, ?) ON CONFLICT(username) DO UPDATE SET amount=excluded.amount')
+      .run(username, amount);
+    
+    logger.info(`[${req.rrn}] ${username} - Budget set to ${amount}`, { rrn: req.rrn, username, amount });
+    res.json({ success: true });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error save budget`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.get('/api/budget/:username', (req, res) => {
   const username = req.params.username;
-  db.get('SELECT amount FROM budgets WHERE username = ?', [username], (err, row) => {
-    if (err) return res.status(500).json({ error: 'db error' });
+  
+  try {
+    const row = db.prepare('SELECT amount FROM budgets WHERE username = ?').get(username);
     res.json({ amount: row ? row.amount : null });
-  });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error fetching budget`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 app.get('/api/user/:username', (req, res) => {
   const username = req.params.username;
-  db.get('SELECT username, fullName, cnic, country, city, zipcode, createdAt FROM users WHERE username = ?', [username], (err, row) => {
-    if (err) return res.status(500).json({ error: 'db error' });
+  
+  try {
+    const row = db.prepare('SELECT username, fullName, cnic, country, city, zipcode, createdAt FROM users WHERE username = ?').get(username);
     if (!row) return res.status(404).json({ error: 'User not found' });
+    
     logger.info(`[${req.rrn}] ${username} - Retrieved user profile`, { rrn: req.rrn, username });
     res.json({ user: row });
-  });
+  } catch (err) {
+    logger.error(`[${req.rrn}] ${username} - DB error fetching user profile`, { rrn: req.rrn, username, err });
+    res.status(500).json({ error: 'db error' });
+  }
 });
 
 // Logout endpoint so clients can record logout server-side for audit
