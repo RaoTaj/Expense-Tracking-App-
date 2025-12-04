@@ -14,6 +14,11 @@
             "date": 1764831651123,
             "name": "D:\\expense-tracker\\server\\logs\\application.2025-12-04_12.log",
             "hash": "c56f1777a9d91de1e49c84afe7b08f0798caeb361ba371ce000f8a8447cc9e9d"
+        },
+        {
+            "date": 1764836659688,
+            "name": "D:\\expense-tracker\\server\\logs\\application.2025-12-04_13.log",
+            "hash": "3628243605379da283c81697fd69b4169762d9212099b7e8c9fc6080873a794f"
         }
     ],
     "hashType": "sha256"
