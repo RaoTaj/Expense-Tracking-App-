@@ -116,6 +116,47 @@ app.post('/api/login', (req, res) => {
   });
 });
 
+app.get('/api/user/:username/data', (req, res) => {
+  const username = req.params.username;
+  const result = {};
+  db.all('SELECT * FROM expenses WHERE username = ? ORDER BY date DESC', [username], (err, expenses) => {
+    if (err) {
+      logger.error(`[${req.rrn}] ${username} - DB error fetching expenses`, { rrn: req.rrn, username, err });
+      return res.status(500).json({ error: 'db error' });
+    }
+    result.expenses = expenses || [];
+    db.all('SELECT name,color,hex,budget,icon FROM categories WHERE username = ?', [username], (err2, categories) => {
+      if (err2) {
+        logger.error(`[${req.rrn}] ${username} - DB error fetching categories`, { rrn: req.rrn, username, err: err2 });
+        return res.status(500).json({ error: 'db error' });
+      }
+      result.categories = categories && categories.length ? categories : null;
+      db.get('SELECT amount FROM budgets WHERE username = ?', [username], (err3, budgetRow) => {
+        if (err3) {
+          logger.error(`[${req.rrn}] ${username} - DB error fetching budget`, { rrn: req.rrn, username, err: err3 });
+          return res.status(500).json({ error: 'db error' });
+        }
+        result.budget = budgetRow ? budgetRow.amount : null;
+        logger.info(`[${req.rrn}] ${username} - Retrieved user data`, { rrn: req.rrn, username });
+        res.json(result);
+      });
+    });
+  });
+});
+
+app.post('/api/expenses', (req, res) => {
+  const { username, amount, category, description, date } = req.body;
+  if (!username) return res.status(400).json({ error: 'username required' });
+  db.run('INSERT INTO expenses (username, amount, category, description, date) VALUES (?, ?, ?, ?, ?)', [username, amount, category, description, date], function (err) {
+    if (err) {
+      logger.error(`[${req.rrn}] ${username} - DB error insert expense`, { rrn: req.rrn, username, err });
+      return res.status(500).json({ error: 'db error' });
+    }
+    logger.info(`[${req.rrn}] ${username} - Expense added id=${this.lastID}`, { rrn: req.rrn, username, expenseId: this.lastID });
+    res.json({ success: true, id: this.lastID });
+  });
+});
+
     app.post('/api/expenses/bulk', (req, res) => {
       const { username, expenses } = req.body;
       if (!username || !Array.isArray(expenses)) return res.status(400).json({ error: 'invalid payload' });
