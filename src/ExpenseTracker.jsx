@@ -22,6 +22,7 @@ export default function ExpenseTracker() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [editingBudgetValue, setEditingBudgetValue] = useState('');
   
   // Registration fields
   const [regForm, setRegForm] = useState({
@@ -912,23 +913,27 @@ export default function ExpenseTracker() {
                       <div className="flex items-center gap-2">
                         <input
                           type="number"
-                          defaultValue={cat.budget}
+                          value={editingBudgetValue}
+                          onChange={(e) => setEditingBudgetValue(e.target.value)}
                           className="w-20 p-1 border-2 border-indigo-300 rounded text-sm"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
-                              updateBudget(cat.name, e.target.value);
+                              updateBudget(cat.name, editingBudgetValue);
                             }
                           }}
                           autoFocus
                         />
                         <button
-                          onClick={(e) => updateBudget(cat.name, e.target.previousSibling.value)}
+                          onClick={() => updateBudget(cat.name, editingBudgetValue)}
                           className="text-green-600 hover:text-green-700"
                         >
                           <Check size={18} />
                         </button>
                         <button
-                          onClick={() => setEditingBudget(null)}
+                          onClick={() => {
+                            setEditingBudget(null);
+                            setEditingBudgetValue('');
+                          }}
                           className="text-red-600 hover:text-red-700"
                         >
                           <X size={18} />
@@ -940,7 +945,10 @@ export default function ExpenseTracker() {
                           Rs {spent.toFixed(0)} / {cat.budget}
                         </span>
                         <button
-                          onClick={() => setEditingBudget(cat.name)}
+                          onClick={() => {
+                            setEditingBudget(cat.name);
+                            setEditingBudgetValue(cat.budget.toString());
+                          }}
                           className="text-indigo-600 hover:text-indigo-700"
                         >
                           <Edit2 size={16} />

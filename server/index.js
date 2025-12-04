@@ -3,7 +3,6 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
-const expressWinston = require('express-winston');
 const winston = require('winston');
 const DailyRotateFile = require('winston-daily-rotate-file');
 const { db, init } = require('./db');
@@ -57,26 +56,67 @@ const errorRotate = new DailyRotateFile({
 const logger = winston.createLogger({
   level: 'info',
   format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.json()
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.printf(({ timestamp, level, message, rrn, username }) => {
+      return `[${timestamp}] [${rrn}] ${username || 'unknown'} - ${message}`;
+    })
   ),
   transports: [
     infoRotate,
     errorRotate,
-    new winston.transports.Console({ format: winston.format.simple() })
+    new winston.transports.Console({ 
+      format: winston.format.printf(({ timestamp, level, message, rrn, username }) => {
+        return `[${timestamp}] [${rrn}] ${username || 'unknown'} - ${message}`;
+      })
+    })
   ]
 });
 
-app.use(expressWinston.logger({
-  winstonInstance: logger,
-  meta: true,
-  expressFormat: true,
-  colorize: false,
-  msg: "HTTP {{req.method}} {{req.url}}",
-  requestWhitelist: [...expressWinston.requestWhitelist, 'body'],
-  responseWhitelist: [...expressWinston.responseWhitelist, 'body'],
-  dynamicMeta: (req, res) => ({ rrn: req.rrn, username: req.requestedUsername })
-}));
+// Custom middleware to log API calls with request params and response details
+app.use((req, res, next) => {
+  const start = Date.now();
+  const originalSend = res.send;
+  let responseBody = '';
+
+  res.send = function(data) {
+    responseBody = data;
+    return originalSend.call(this, data);
+  };
+
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    let logDetails = '';
+    
+    // Log request parameters
+    if (req.method === 'POST' || req.method === 'PUT') {
+      if (req.body && Object.keys(req.body).length > 0) {
+        logDetails = `Input: ${JSON.stringify(req.body)} | `;
+      }
+    }
+    
+    // Log response
+    try {
+      const parsed = typeof responseBody === 'string' ? JSON.parse(responseBody) : responseBody;
+      if (parsed.success !== undefined) {
+        logDetails += `Success: ${parsed.success}`;
+      } else if (parsed.error) {
+        logDetails += `Error: ${parsed.error}`;
+      } else if (parsed.user) {
+        logDetails += `User: ${parsed.user.username}`;
+      } else if (parsed.id) {
+        logDetails += `ID: ${parsed.id}`;
+      } else if (Array.isArray(parsed)) {
+        logDetails += `Records: ${parsed.length}`;
+      }
+    } catch (e) {
+      logDetails += `Response: ${res.statusCode}`;
+    }
+
+    const logMsg = `${req.method} ${req.originalUrl} ${res.statusCode} ${duration}ms | ${logDetails}`;
+    logger.info(logMsg, { rrn: req.rrn, username: req.requestedUsername });
+  });
+  next();
+});
 
 // Routes
 app.post('/api/register', (req, res) => {
