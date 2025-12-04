@@ -1,3 +1,4 @@
+tail -f application.*.log
 # Linux VM Deployment Guide
 
 ## Problem Fixed
