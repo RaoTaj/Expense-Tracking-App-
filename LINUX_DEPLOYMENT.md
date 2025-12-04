@@ -127,3 +127,19 @@ eas build --platform android
 ```
 
 Backend IP in mobile app config: Update `API_BASE` to point to VM IP for testing.
+
+## PM2 (recommended) or systemd service
+
+PM2 is the easiest way to keep the Node process running and resurrect it after reboots. The repository includes `server/setup_vm.sh` which installs PM2 and starts the server.
+
+Alternatively you can use systemd with the provided `server/expense-tracker.service` file. To enable it on the VM:
+
+```bash
+# copy the service file to /etc/systemd/system
+sudo cp server/expense-tracker.service /etc/systemd/system/expense-tracker.service
+sudo systemctl daemon-reload
+sudo systemctl enable --now expense-tracker.service
+sudo journalctl -u expense-tracker -f
+```
+
+Replace `WorkingDirectory` and `ExecStart` in the service file if you install the app in a different path than `/opt/expense-tracker`.
