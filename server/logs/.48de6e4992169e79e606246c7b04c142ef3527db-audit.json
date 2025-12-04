@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "D:\\expense-tracker\\server\\logs\\.48de6e4992169e79e606246c7b04c142ef3527db-audit.json",
+    "files": [
+        {
+            "date": 1764831336996,
+            "name": "D:\\expense-tracker\\server\\logs\\application.2025-12-04_11.log",
+            "hash": "f43b850bd24457f1f12670c46708a5025b8338a1f1d527756e794415d959030e"
+        },
+        {
+            "date": 1764831651123,
+            "name": "D:\\expense-tracker\\server\\logs\\application.2025-12-04_12.log",
+            "hash": "c56f1777a9d91de1e49c84afe7b08f0798caeb361ba371ce000f8a8447cc9e9d"
+        }
+    ],
+    "hashType": "sha256"
+}
