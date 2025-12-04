@@ -76,6 +76,17 @@ export default function ExpenseTracker() {
     checkLoggedIn();
   }, []);
 
+  // Auto-refresh user data every 10 seconds when logged in
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    const interval = setInterval(() => {
+      loadUserData(currentUser.username);
+    }, 10000);
+    
+    return () => clearInterval(interval);
+  }, [currentUser]);
+
   const checkLoggedIn = async () => {
     try {
       const username = localStorage.getItem('current-session');
@@ -195,7 +206,11 @@ export default function ExpenseTracker() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: currentUser.username, expenses: newExpenses })
       });
-      if (resp.ok) setExpenses(newExpenses);
+      if (resp.ok) {
+        setExpenses(newExpenses);
+        // Reload full data to stay in sync
+        await loadUserData(currentUser.username);
+      }
       else console.error('Failed to save expenses bulk');
     } catch (error) {
       console.error('Failed to save expenses:', error);
@@ -210,7 +225,11 @@ export default function ExpenseTracker() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: currentUser.username, categories: newCategories })
       });
-      if (resp.ok) setCategories(newCategories);
+      if (resp.ok) {
+        setCategories(newCategories);
+        // Reload full data to stay in sync
+        await loadUserData(currentUser.username);
+      }
       else console.error('Failed to save categories');
     } catch (error) {
       console.error('Failed to save categories:', error);
@@ -225,7 +244,11 @@ export default function ExpenseTracker() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: currentUser.username, amount: budget })
       });
-      if (resp.ok) setMonthlyBudget(budget);
+      if (resp.ok) {
+        setMonthlyBudget(budget);
+        // Reload full data to stay in sync
+        await loadUserData(currentUser.username);
+      }
       else console.error('Failed to save budget');
     } catch (error) {
       console.error('Failed to save budget:', error);
@@ -1007,25 +1030,76 @@ export default function ExpenseTracker() {
               <Bell size={20} className="text-yellow-500" />
               Budget Alerts
             </h3>
-            {getTotalSpending() > monthlyBudget * 0.9 && (
-              <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-2">
-                <p className="text-red-700 font-semibold">⚠️ Budget Alert!</p>
-                <p className="text-sm text-red-600">You've used {((getTotalSpending() / monthlyBudget) * 100).toFixed(0)}% of your monthly budget</p>
+            
+            {getTotalSpending() === 0 ? (
+              <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-2">
+                <p className="text-green-700 font-semibold">✓ All Clear</p>
+                <p className="text-sm text-green-600">No expenses yet. Start adding expenses to track your budget.</p>
               </div>
-            )}
-            {categories.map(cat => {
-              const spent = getCategorySpending(cat.name);
-              const percentage = (spent / cat.budget) * 100;
-              if (percentage > 90) {
-                return (
-                  <div key={cat.name} className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-2">
-                    <p className="text-yellow-700 font-semibold">{cat.icon} {cat.name}</p>
-                    <p className="text-sm text-yellow-600">{percentage.toFixed(0)}% of budget used</p>
+            ) : (
+              <>
+                {/* Overall Budget Alert */}
+                {getTotalSpending() > monthlyBudget ? (
+                  <div className="bg-red-50 border-2 border-red-300 rounded-xl p-3 mb-3">
+                    <p className="text-red-700 font-bold">🚨 Budget Exceeded!</p>
+                    <p className="text-sm text-red-600">You've spent Rs {getTotalSpending().toFixed(0)} out of Rs {monthlyBudget}</p>
+                    <p className="text-xs text-red-500 mt-1">Overspent by Rs {(getTotalSpending() - monthlyBudget).toFixed(0)}</p>
                   </div>
-                );
-              }
-              return null;
-            })}
+                ) : getTotalSpending() > monthlyBudget * 0.9 ? (
+                  <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-3 mb-3">
+                    <p className="text-orange-700 font-bold">⚠️ Critical Alert!</p>
+                    <p className="text-sm text-orange-600">You've used {((getTotalSpending() / monthlyBudget) * 100).toFixed(0)}% of your monthly budget</p>
+                    <p className="text-xs text-orange-500 mt-1">Only Rs {(monthlyBudget - getTotalSpending()).toFixed(0)} remaining</p>
+                  </div>
+                ) : getTotalSpending() > monthlyBudget * 0.75 ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-3 mb-3">
+                    <p className="text-yellow-700 font-semibold">⚡ Warning</p>
+                    <p className="text-sm text-yellow-600">You've used {((getTotalSpending() / monthlyBudget) * 100).toFixed(0)}% of budget ({((monthlyBudget - getTotalSpending()) / monthlyBudget * 100).toFixed(0)}% remaining)</p>
+                  </div>
+                ) : (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-3 mb-3">
+                    <p className="text-green-700 font-semibold">✓ On Track</p>
+                    <p className="text-sm text-green-600">You've used {((getTotalSpending() / monthlyBudget) * 100).toFixed(0)}% of budget. Rs {(monthlyBudget - getTotalSpending()).toFixed(0)} remaining</p>
+                  </div>
+                )}
+
+                {/* Category Alerts */}
+                <div className="mt-3 border-t pt-3">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">CATEGORY ALERTS</p>
+                  {categories.filter(cat => {
+                    const spent = getCategorySpending(cat.name);
+                    return (spent / cat.budget) * 100 > 70;
+                  }).length === 0 ? (
+                    <p className="text-xs text-gray-500">All categories within budget ✓</p>
+                  ) : (
+                    categories.map(cat => {
+                      const spent = getCategorySpending(cat.name);
+                      const percentage = (spent / cat.budget) * 100;
+                      if (percentage > 70) {
+                        return (
+                          <div key={cat.name} className={`rounded-lg p-2 mb-2 ${
+                            percentage > 100 ? 'bg-red-50 border border-red-100' : 
+                            percentage > 90 ? 'bg-orange-50 border border-orange-100' : 
+                            'bg-yellow-50 border border-yellow-100'
+                          }`}>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm font-semibold">{cat.icon} {cat.name}</span>
+                              <span className={`text-xs font-bold ${
+                                percentage > 100 ? 'text-red-600' :
+                                percentage > 90 ? 'text-orange-600' :
+                                'text-yellow-600'
+                              }`}>{percentage.toFixed(0)}%</span>
+                            </div>
+                            <p className="text-xs text-gray-600">Rs {spent.toFixed(0)} / Rs {cat.budget}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    })
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

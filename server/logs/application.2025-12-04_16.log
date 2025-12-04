@@ -111,3 +111,61 @@
 [2025-12-04 16:35:09] [20251204163509_122_115469] sikandar_5777 - POST /api/budget 200 14ms | Input: {"username":"sikandar_5777","amount":50000} | Success: true
 [2025-12-04 16:35:10] [20251204163510_740_996991] sikandar_5777 - [20251204163510_740_996991] sikandar_5777 - Budget set to 500000
 [2025-12-04 16:35:10] [20251204163510_740_996991] sikandar_5777 - POST /api/budget 200 11ms | Input: {"username":"sikandar_5777","amount":500000} | Success: true
+[2025-12-04 16:39:24] [undefined] unknown - Server started on 4000
+[2025-12-04 16:39:39] [20251204163939_002_458594] sikandar_5777 - [20251204163939_002_458594] sikandar_5777 - Retrieved user profile
+[2025-12-04 16:39:39] [20251204163939_002_458594] unknown - GET /api/user/sikandar_5777 304 8ms | User: sikandar_5777
+[2025-12-04 16:39:39] [20251204163939_021_389868] sikandar_5777 - [20251204163939_021_389868] sikandar_5777 - Retrieved user profile
+[2025-12-04 16:39:39] [20251204163939_021_389868] unknown - GET /api/user/sikandar_5777 304 4ms | User: sikandar_5777
+[2025-12-04 16:39:39] [20251204163939_022_307903] sikandar_5777 - [20251204163939_022_307903] sikandar_5777 - Retrieved user data
+[2025-12-04 16:39:39] [20251204163939_022_307903] unknown - GET /api/user/sikandar_5777/data 200 10ms | 
+[2025-12-04 16:39:39] [20251204163939_345_291143] sikandar_5777 - [20251204163939_345_291143] sikandar_5777 - Retrieved user data
+[2025-12-04 16:39:39] [20251204163939_345_291143] unknown - GET /api/user/sikandar_5777/data 304 3ms | 
+[2025-12-04 16:40:06] [20251204164006_122_612569] sikandar_5777 - [20251204164006_122_612569] sikandar_5777 - Categories saved (7)
+[2025-12-04 16:40:06] [20251204164006_122_612569] sikandar_5777 - POST /api/categories 200 38ms | Input: {"username":"sikandar_5777","categories":[{"name":"Food","color":"bg-orange-500","hex":"#f97316","budget":5000,"icon":"🍔"},{"name":"Transport","color":"bg-blue-500","hex":"#3b82f6","budget":2000,"icon":"🚗"},{"name":"Shopping","color":"bg-pink-500","hex":"#ec4899","budget":300,"icon":"🛍️"},{"name":"Bills","color":"bg-red-500","hex":"#ef4444","budget":400,"icon":"📄"},{"name":"Entertainment","color":"bg-purple-500","hex":"#a855f7","budget":150,"icon":"🎬"},{"name":"Other","color":"bg-gray-500","hex":"#6b7280","budget":100,"icon":"📦"},{"name":"Games","color":"bg-indigo-500","hex":"#6366f1","budget":1000,"icon":"🎮"}]} | Success: true
+[2025-12-04 16:40:31] [20251204164031_913_233340] sikandar_5777 - [20251204164031_913_233340] sikandar_5777 - Categories saved (7)
+[2025-12-04 16:40:31] [20251204164031_913_233340] sikandar_5777 - POST /api/categories 200 71ms | Input: {"username":"sikandar_5777","categories":[{"name":"Food","color":"bg-orange-500","hex":"#f97316","budget":5,"icon":"🍔"},{"name":"Transport","color":"bg-blue-500","hex":"#3b82f6","budget":2000,"icon":"🚗"},{"name":"Shopping","color":"bg-pink-500","hex":"#ec4899","budget":300,"icon":"🛍️"},{"name":"Bills","color":"bg-red-500","hex":"#ef4444","budget":400,"icon":"📄"},{"name":"Entertainment","color":"bg-purple-500","hex":"#a855f7","budget":150,"icon":"🎬"},{"name":"Other","color":"bg-gray-500","hex":"#6b7280","budget":100,"icon":"📦"},{"name":"Games","color":"bg-indigo-500","hex":"#6366f1","budget":1000,"icon":"🎮"}]} | Success: true
+[2025-12-04 16:40:56] [20251204164056_268_634268] sikandar_5777 - [20251204164056_268_634268] sikandar_5777 - Categories saved (7)
+[2025-12-04 16:40:56] [20251204164056_268_634268] sikandar_5777 - POST /api/categories 200 46ms | Input: {"username":"sikandar_5777","categories":[{"name":"Food","color":"bg-orange-500","hex":"#f97316","budget":10000,"icon":"🍔"},{"name":"Transport","color":"bg-blue-500","hex":"#3b82f6","budget":2000,"icon":"🚗"},{"name":"Shopping","color":"bg-pink-500","hex":"#ec4899","budget":300,"icon":"🛍️"},{"name":"Bills","color":"bg-red-500","hex":"#ef4444","budget":400,"icon":"📄"},{"name":"Entertainment","color":"bg-purple-500","hex":"#a855f7","budget":150,"icon":"🎬"},{"name":"Other","color":"bg-gray-500","hex":"#6b7280","budget":100,"icon":"📦"},{"name":"Games","color":"bg-indigo-500","hex":"#6366f1","budget":1000,"icon":"🎮"}]} | Success: true
+[2025-12-04 16:41:33] [20251204164133_237_584145] sikandar_5777 - [20251204164133_237_584145] sikandar_5777 - Bulk expenses saved (1)
+[2025-12-04 16:41:33] [20251204164133_237_584145] sikandar_5777 - POST /api/expenses/bulk 200 20ms | Input: {"username":"sikandar_5777","expenses":[{"id":1764848492916,"amount":9000,"category":"Food","description":"Kababjees","date":"2025-12-04"}]} | Success: true
+[2025-12-04 16:42:06] [20251204164206_103_602376] sikandar_5777 - [20251204164206_103_602376] sikandar_5777 - Bulk expenses saved (2)
+[2025-12-04 16:42:06] [20251204164206_103_602376] sikandar_5777 - POST /api/expenses/bulk 200 20ms | Input: {"username":"sikandar_5777","expenses":[{"id":1764848526100,"amount":1000,"category":"Food","description":"KFC","date":"2025-12-04"},{"id":1764848492916,"amount":9000,"category":"Food","description":"Kababjees","date":"2025-12-04"}]} | Success: true
+[2025-12-04 16:42:21] [20251204164221_683_387148] sikandar_5777 - [20251204164221_683_387148] sikandar_5777 - Retrieved user profile
+[2025-12-04 16:42:21] [20251204164221_683_387148] unknown - GET /api/user/sikandar_5777 304 2ms | User: sikandar_5777
+[2025-12-04 16:42:21] [20251204164221_690_602424] sikandar_5777 - [20251204164221_690_602424] sikandar_5777 - Retrieved user profile
+[2025-12-04 16:42:21] [20251204164221_690_602424] unknown - GET /api/user/sikandar_5777 304 1ms | User: sikandar_5777
+[2025-12-04 16:42:21] [20251204164221_770_109902] sikandar_5777 - [20251204164221_770_109902] sikandar_5777 - Retrieved user data
+[2025-12-04 16:42:21] [20251204164221_770_109902] unknown - GET /api/user/sikandar_5777/data 200 2ms | 
+[2025-12-04 16:42:22] [20251204164222_086_525327] sikandar_5777 - [20251204164222_086_525327] sikandar_5777 - Retrieved user data
+[2025-12-04 16:42:22] [20251204164222_086_525327] unknown - GET /api/user/sikandar_5777/data 304 2ms | 
+[2025-12-04 16:43:22] [20251204164322_601_952539] sikandar_5777 - [20251204164322_601_952539] sikandar_5777 - Retrieved user profile
+[2025-12-04 16:43:22] [20251204164322_601_952539] unknown - GET /api/user/sikandar_5777 304 3ms | User: sikandar_5777
+[2025-12-04 16:43:22] [20251204164322_922_696218] sikandar_5777 - [20251204164322_922_696218] sikandar_5777 - Retrieved user data
+[2025-12-04 16:43:22] [20251204164322_922_696218] unknown - GET /api/user/sikandar_5777/data 304 4ms | 
+[2025-12-04 16:43:33] [20251204164333_578_845615] sikandar_5777 - [20251204164333_578_845615] sikandar_5777 - Retrieved user data
+[2025-12-04 16:43:33] [20251204164333_578_845615] unknown - GET /api/user/sikandar_5777/data 304 7ms | 
+[2025-12-04 16:43:43] [20251204164343_886_198596] sikandar_5777 - [20251204164343_886_198596] sikandar_5777 - Retrieved user data
+[2025-12-04 16:43:43] [20251204164343_886_198596] unknown - GET /api/user/sikandar_5777/data 304 6ms | 
+[2025-12-04 16:43:51] [undefined] unknown - Server started on 4000
+[2025-12-04 16:43:53] [20251204164353_134_328093] sikandar_5777 - [20251204164353_134_328093] sikandar_5777 - Retrieved user data
+[2025-12-04 16:43:53] [20251204164353_134_328093] unknown - GET /api/user/sikandar_5777/data 304 15ms | 
+[2025-12-04 16:43:54] [20251204164354_968_619242] sikandar_5777 - [20251204164354_968_619242] sikandar_5777 - Retrieved user profile
+[2025-12-04 16:43:54] [20251204164354_968_619242] unknown - GET /api/user/sikandar_5777 304 4ms | User: sikandar_5777
+[2025-12-04 16:43:54] [20251204164354_981_335359] sikandar_5777 - [20251204164354_981_335359] sikandar_5777 - Retrieved user profile
+[2025-12-04 16:43:54] [20251204164354_981_335359] unknown - GET /api/user/sikandar_5777 304 3ms | User: sikandar_5777
+[2025-12-04 16:43:54] [20251204164354_982_917846] sikandar_5777 - [20251204164354_982_917846] sikandar_5777 - Retrieved user data
+[2025-12-04 16:43:54] [20251204164354_982_917846] unknown - GET /api/user/sikandar_5777/data 304 5ms | 
+[2025-12-04 16:43:55] [20251204164355_300_435068] sikandar_5777 - [20251204164355_300_435068] sikandar_5777 - Retrieved user data
+[2025-12-04 16:43:55] [20251204164355_300_435068] unknown - GET /api/user/sikandar_5777/data 304 4ms | 
+[2025-12-04 16:44:05] [20251204164405_014_569932] sikandar_5777 - [20251204164405_014_569932] sikandar_5777 - Retrieved user data
+[2025-12-04 16:44:05] [20251204164405_014_569932] unknown - GET /api/user/sikandar_5777/data 304 4ms | 
+[2025-12-04 16:44:15] [20251204164415_340_372739] sikandar_5777 - [20251204164415_340_372739] sikandar_5777 - Retrieved user data
+[2025-12-04 16:44:15] [20251204164415_340_372739] unknown - GET /api/user/sikandar_5777/data 304 4ms | 
+[2025-12-04 16:44:20] [20251204164420_528_645658] sikandar_5777 - [20251204164420_528_645658] sikandar_5777 - Bulk expenses saved (3)
+[2025-12-04 16:44:20] [20251204164420_528_645658] sikandar_5777 - POST /api/expenses/bulk 200 25ms | Input: {"username":"sikandar_5777","expenses":[{"id":1764848660508,"amount":1000,"category":"Entertainment","description":"Van Rent","date":"2025-12-04"},{"id":6,"username":"sikandar_5777","amount":1000,"category":"Food","description":"KFC","date":"2025-12-04"},{"id":7,"username":"sikandar_5777","amount":9000,"category":"Food","description":"Kababjees","date":"2025-12-04"}]} | Success: true
+[2025-12-04 16:44:20] [20251204164420_881_511617] sikandar_5777 - [20251204164420_881_511617] sikandar_5777 - Retrieved user data
+[2025-12-04 16:44:20] [20251204164420_881_511617] unknown - GET /api/user/sikandar_5777/data 200 8ms | 
+[2025-12-04 16:44:25] [20251204164425_032_698389] sikandar_5777 - [20251204164425_032_698389] sikandar_5777 - Retrieved user data
+[2025-12-04 16:44:25] [20251204164425_032_698389] unknown - GET /api/user/sikandar_5777/data 304 7ms | 
+[2025-12-04 16:44:35] [20251204164435_883_193421] sikandar_5777 - [20251204164435_883_193421] sikandar_5777 - Retrieved user data
+[2025-12-04 16:44:35] [20251204164435_883_193421] unknown - GET /api/user/sikandar_5777/data 304 7ms | 
